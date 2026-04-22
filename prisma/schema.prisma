@@ -1,0 +1,257 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  admin
+  health_worker
+}
+
+enum Gender {
+  male
+  female
+  other
+}
+
+enum ConditionType {
+  HIV
+  TB
+  Hypertension
+  Malaria
+  Typhoid
+  Diabetes
+  Other
+}
+
+enum NotificationType {
+  missed_medication
+  upcoming_visit
+  at_risk_alert
+  general
+}
+
+enum SyncStatus {
+  synced
+  pending
+  conflict
+}
+
+model Role_Table {
+  id          String        @id @default(uuid()) @db.Uuid
+  name        Role          @unique
+  description String?
+  createdAt   DateTime      @default(now()) @map("created_at")
+  workers     HealthWorker[]
+
+  @@map("roles")
+}
+
+model HealthWorker {
+  id           String        @id @default(uuid()) @db.Uuid
+  name         String
+  email        String        @unique
+  passwordHash String        @map("password_hash")
+  phone        String?
+  role         Role          @default(health_worker)
+  roleId       String?       @map("role_id") @db.Uuid
+  roleRef      Role_Table?   @relation(fields: [roleId], references: [id])
+  isActive     Boolean       @default(true) @map("is_active")
+  syncStatus   SyncStatus    @default(synced) @map("sync_status")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+
+  visits        Visit[]
+  notifications Notification[]
+
+  @@index([email])
+  @@map("health_workers")
+}
+
+model Patient {
+  id              String    @id @default(uuid()) @db.Uuid
+  patientCode     String    @unique @map("patient_code")
+  name            String
+  age             Int
+  gender          Gender
+  location        String
+  phone           String?
+  isAtRisk        Boolean   @default(false) @map("is_at_risk")
+  deletedAt       DateTime? @map("deleted_at")
+  syncStatus      SyncStatus @default(synced) @map("sync_status")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  conditions      PatientCondition[]
+  medications     PatientMedication[]
+  visits          Visit[]
+  medicalRecords  MedicalRecord[]
+  notifications   Notification[]
+  notes           Note[]
+
+  @@index([patientCode])
+  @@index([isAtRisk])
+  @@index([deletedAt])
+  @@map("patients")
+}
+
+model Condition {
+  id          String          @id @default(uuid()) @db.Uuid
+  name        ConditionType   @unique
+  description String?
+  createdAt   DateTime        @default(now()) @map("created_at")
+
+  patients    PatientCondition[]
+
+  @@map("conditions")
+}
+
+model PatientCondition {
+  id          String    @id @default(uuid()) @db.Uuid
+  patientId   String    @map("patient_id") @db.Uuid
+  conditionId String    @map("condition_id") @db.Uuid
+  diagnosedAt DateTime? @map("diagnosed_at")
+  notes       String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  patient     Patient   @relation(fields: [patientId], references: [id])
+  condition   Condition @relation(fields: [conditionId], references: [id])
+
+  @@unique([patientId, conditionId])
+  @@index([patientId])
+  @@map("patient_conditions")
+}
+
+model Medication {
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String
+  description String?
+  dosageUnit  String    @map("dosage_unit")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  patients    PatientMedication[]
+
+  @@map("medications")
+}
+
+model PatientMedication {
+  id            String    @id @default(uuid()) @db.Uuid
+  patientId     String    @map("patient_id") @db.Uuid
+  medicationId  String    @map("medication_id") @db.Uuid
+  dosage        String
+  frequency     String
+  startDate     DateTime  @map("start_date")
+  endDate       DateTime? @map("end_date")
+  isActive      Boolean   @default(true) @map("is_active")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  patient       Patient    @relation(fields: [patientId], references: [id])
+  medication    Medication @relation(fields: [medicationId], references: [id])
+
+  @@index([patientId])
+  @@map("patient_medications")
+}
+
+model Visit {
+  id                 String    @id @default(uuid()) @db.Uuid
+  patientId          String    @map("patient_id") @db.Uuid
+  healthWorkerId     String    @map("health_worker_id") @db.Uuid
+  visitDate          DateTime  @map("visit_date")
+  notes              String?
+  medicationAdherence Boolean? @map("medication_adherence")
+  nextVisitDate      DateTime? @map("next_visit_date")
+  syncStatus         SyncStatus @default(synced) @map("sync_status")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  patient            Patient      @relation(fields: [patientId], references: [id])
+  healthWorker       HealthWorker @relation(fields: [healthWorkerId], references: [id])
+  measurements       Measurement[]
+
+  @@index([patientId])
+  @@index([healthWorkerId])
+  @@index([visitDate])
+  @@map("visits")
+}
+
+model Measurement {
+  id              String    @id @default(uuid()) @db.Uuid
+  visitId         String    @map("visit_id") @db.Uuid
+  systolic        Int?
+  diastolic       Int?
+  weight          Float?
+  height          Float?
+  temperature     Float?
+  bloodSugar      Float?    @map("blood_sugar")
+  oxygenSat       Float?    @map("oxygen_saturation")
+  recordedAt      DateTime  @default(now()) @map("recorded_at")
+
+  visit           Visit     @relation(fields: [visitId], references: [id])
+
+  @@index([visitId])
+  @@map("measurements")
+}
+
+model MedicalRecord {
+  id            String    @id @default(uuid()) @db.Uuid
+  patientId     String    @map("patient_id") @db.Uuid
+  recordType    String    @map("record_type")
+  tbStatus      String?   @map("tb_status")
+  hivViralLoad  Float?    @map("hiv_viral_load")
+  hivTestDate   DateTime? @map("hiv_test_date")
+  hivTestResult String?   @map("hiv_test_result")
+  malariaResult String?   @map("malaria_result")
+  typhoidResult String?   @map("typhoid_result")
+  arvRegimen    String?   @map("arv_regimen")
+  notes         String?
+  recordedAt    DateTime  @default(now()) @map("recorded_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  patient       Patient   @relation(fields: [patientId], references: [id])
+
+  @@index([patientId])
+  @@index([recordedAt])
+  @@map("medical_records")
+}
+
+model Note {
+  id          String    @id @default(uuid()) @db.Uuid
+  patientId   String    @map("patient_id") @db.Uuid
+  content     String
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  patient     Patient   @relation(fields: [patientId], references: [id])
+
+  @@index([patientId])
+  @@map("notes")
+}
+
+model Notification {
+  id             String           @id @default(uuid()) @db.Uuid
+  patientId      String?          @map("patient_id") @db.Uuid
+  healthWorkerId String?          @map("health_worker_id") @db.Uuid
+  type           NotificationType
+  title          String
+  message        String
+  isRead         Boolean          @default(false) @map("is_read")
+  smsTriggered   Boolean          @default(false) @map("sms_triggered")
+  smsLog         String?          @map("sms_log")
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+
+  patient        Patient?         @relation(fields: [patientId], references: [id])
+  healthWorker   HealthWorker?    @relation(fields: [healthWorkerId], references: [id])
+
+  @@index([patientId])
+  @@index([healthWorkerId])
+  @@index([isRead])
+  @@map("notifications")
+}
