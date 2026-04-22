@@ -1,0 +1,774 @@
+{
+	"info": {
+		"_postman_id": "afya-flow-chw-backend",
+		"name": "Afya Flow – CHW Backend API",
+		"description": "Comprehensive Postman collection for the **Afya Flow** Community Health Worker Backend System.\n\nBase URL: `http://localhost:3000`\n\n## Authentication\nMost endpoints require a **Bearer** JWT token in the `Authorization` header.\n1. Call **POST /api/v1/auth/signup** or **POST /api/v1/auth/login** first.\n2. Copy the `token` from the response.\n3. Set the collection variable `token` (or the login request will auto-set it via the *Tests* script).\n\n## Roles\n- `admin` – full access\n- `health_worker` – standard access (some endpoints restricted)",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3000",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "patientId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "notificationId",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{token}}",
+				"type": "string"
+			}
+		]
+	},
+	"item": [
+		{
+			"name": "Health Check",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/health",
+							"host": ["{{baseUrl}}"],
+							"path": ["health"]
+						},
+						"description": "Returns server health status. No authentication required."
+					},
+					"response": [
+						{
+							"name": "Healthy",
+							"originalRequest": {
+								"method": "GET",
+								"url": {
+									"raw": "{{baseUrl}}/health",
+									"host": ["{{baseUrl}}"],
+									"path": ["health"]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"body": "{\n  \"success\": true,\n  \"data\": {\n    \"status\": \"healthy\",\n    \"timestamp\": \"2026-04-22T19:25:00.000Z\"\n  }\n}"
+						}
+					]
+				}
+			],
+			"description": "Server health status endpoint."
+		},
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Signup",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.data && jsonData.data.token) {",
+									"        pm.collectionVariables.set('token', jsonData.data.token);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Jane Wanjiku\",\n  \"email\": \"jane.wanjiku@example.com\",\n  \"password\": \"securePass123\",\n  \"phone\": \"+254712345678\",\n  \"role\": \"health_worker\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/auth/signup",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "auth", "signup"]
+						},
+						"description": "Register a new health worker account.\n\n**Body fields:**\n| Field | Type | Required | Notes |\n|---|---|---|---|\n| name | string | ✅ | Min 2 chars |\n| email | string | ✅ | Valid email |\n| password | string | ✅ | Min 8 chars |\n| phone | string | ❌ | Optional |\n| role | enum | ❌ | `admin` or `health_worker` (default) |"
+					},
+					"response": [
+						{
+							"name": "Success – Worker Registered",
+							"originalRequest": {
+								"method": "POST",
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/auth/signup",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "auth", "signup"]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"body": "{\n  \"success\": true,\n  \"data\": {\n    \"worker\": {\n      \"id\": \"clxyz...\",\n      \"name\": \"Jane Wanjiku\",\n      \"email\": \"jane.wanjiku@example.com\",\n      \"role\": \"health_worker\",\n      \"createdAt\": \"2026-04-22T19:25:00.000Z\"\n    },\n    \"token\": \"eyJhbGciOiJIUzI1NiIs...\"\n  },\n  \"message\": \"Health worker registered successfully\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.data && jsonData.data.token) {",
+									"        pm.collectionVariables.set('token', jsonData.data.token);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"jane.wanjiku@example.com\",\n  \"password\": \"securePass123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "auth", "login"]
+						},
+						"description": "Authenticate with email and password. Returns a JWT token.\n\n**Body fields:**\n| Field | Type | Required |\n|---|---|---|\n| email | string | ✅ |\n| password | string | ✅ |"
+					},
+					"response": [
+						{
+							"name": "Success – Login",
+							"originalRequest": {
+								"method": "POST",
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/auth/login",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "auth", "login"]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"body": "{\n  \"success\": true,\n  \"data\": {\n    \"worker\": {\n      \"id\": \"clxyz...\",\n      \"name\": \"Jane Wanjiku\",\n      \"email\": \"jane.wanjiku@example.com\",\n      \"role\": \"health_worker\",\n      \"phone\": \"+254712345678\",\n      \"isActive\": true,\n      \"createdAt\": \"2026-04-22T19:25:00.000Z\",\n      \"updatedAt\": \"2026-04-22T19:25:00.000Z\"\n    },\n    \"token\": \"eyJhbGciOiJIUzI1NiIs...\"\n  },\n  \"message\": \"Login successful\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Current User (Me)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/auth/me",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "auth", "me"]
+						},
+						"description": "Get the profile of the currently authenticated health worker.\n\n**Auth:** Bearer token required."
+					},
+					"response": [
+						{
+							"name": "Success – Current User",
+							"originalRequest": {
+								"method": "GET",
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/auth/me",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "auth", "me"]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"clxyz...\",\n    \"name\": \"Jane Wanjiku\",\n    \"email\": \"jane.wanjiku@example.com\",\n    \"role\": \"health_worker\",\n    \"phone\": \"+254712345678\",\n    \"createdAt\": \"2026-04-22T19:25:00.000Z\"\n  }\n}"
+						}
+					]
+				}
+			],
+			"description": "Authentication endpoints – signup, login, and current user profile.\n\nThe **Signup** and **Login** requests include a *Tests* script that automatically stores the JWT token in the `token` collection variable for subsequent requests."
+		},
+		{
+			"name": "Patients",
+			"item": [
+				{
+					"name": "Create Patient",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.data && jsonData.data.id) {",
+									"        pm.collectionVariables.set('patientId', jsonData.data.id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"John Kamau\",\n  \"age\": 45,\n  \"gender\": \"male\",\n  \"location\": \"Kibera, Nairobi\",\n  \"phone\": \"+254700111222\",\n  \"conditions\": [\"HIV\", \"Hypertension\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/patients",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "patients"]
+						},
+						"description": "Create a new patient record.\n\n**Auth:** Bearer token required.\n\n**Body fields:**\n| Field | Type | Required | Notes |\n|---|---|---|---|\n| name | string | ✅ | Min 2 chars |\n| age | integer | ✅ | 0–150 |\n| gender | enum | ✅ | `male`, `female`, `other` |\n| location | string | ✅ | Min 2 chars |\n| phone | string | ❌ | Optional |\n| conditions | string[] | ❌ | Array of: `HIV`, `TB`, `Hypertension`, `Malaria`, `Typhoid`, `Diabetes`, `Other` |"
+					},
+					"response": [
+						{
+							"name": "Success – Patient Created",
+							"status": "Created",
+							"code": 201,
+							"body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"patient-uuid...\",\n    \"name\": \"John Kamau\",\n    \"age\": 45,\n    \"gender\": \"male\",\n    \"location\": \"Kibera, Nairobi\",\n    \"phone\": \"+254700111222\",\n    \"isAtRisk\": false,\n    \"createdAt\": \"2026-04-22T19:25:00.000Z\"\n  },\n  \"message\": \"Patient created successfully\"\n}"
+						}
+					]
+				},
+				{
+					"name": "List Patients",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/patients?page=1&limit=20",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "patients"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Page number (default: 1)"
+								},
+								{
+									"key": "limit",
+									"value": "20",
+									"description": "Results per page (default: 20, max: 100)"
+								},
+								{
+									"key": "condition",
+									"value": "HIV",
+									"description": "Filter by condition name",
+									"disabled": true
+								},
+								{
+									"key": "isAtRisk",
+									"value": "true",
+									"description": "Filter at-risk patients (true/false)",
+									"disabled": true
+								},
+								{
+									"key": "location",
+									"value": "Kibera",
+									"description": "Filter by location",
+									"disabled": true
+								},
+								{
+									"key": "search",
+									"value": "John",
+									"description": "Search by patient name",
+									"disabled": true
+								}
+							]
+						},
+						"description": "List all patients with optional filters and pagination.\n\n**Auth:** Bearer token required.\n\n**Query parameters:**\n| Param | Type | Description |\n|---|---|---|\n| page | number | Page number (default 1) |\n| limit | number | Items per page (default 20, max 100) |\n| condition | string | Filter by condition |\n| isAtRisk | string | `true` or `false` |\n| location | string | Filter by location |\n| search | string | Search by name |"
+					},
+					"response": [
+						{
+							"name": "Success – Patient List",
+							"status": "OK",
+							"code": 200,
+							"body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"patient-uuid...\",\n      \"name\": \"John Kamau\",\n      \"age\": 45,\n      \"gender\": \"male\",\n      \"location\": \"Kibera, Nairobi\",\n      \"isAtRisk\": false\n    }\n  ],\n  \"pagination\": {\n    \"total\": 1,\n    \"page\": 1,\n    \"limit\": 20,\n    \"totalPages\": 1\n  }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Patient by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/patients/{{patientId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "patients", "{{patientId}}"]
+						},
+						"description": "Get a single patient by ID.\n\n**Auth:** Bearer token required."
+					},
+					"response": [
+						{
+							"name": "Success – Single Patient",
+							"status": "OK",
+							"code": 200,
+							"body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"patient-uuid...\",\n    \"name\": \"John Kamau\",\n    \"age\": 45,\n    \"gender\": \"male\",\n    \"location\": \"Kibera, Nairobi\",\n    \"phone\": \"+254700111222\",\n    \"isAtRisk\": false,\n    \"conditions\": [\"HIV\", \"Hypertension\"],\n    \"createdAt\": \"2026-04-22T19:25:00.000Z\",\n    \"updatedAt\": \"2026-04-22T19:25:00.000Z\"\n  }\n}"
+						}
+					]
+				},
+				{
+					"name": "Update Patient",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"age\": 46,\n  \"location\": \"Mathare, Nairobi\",\n  \"conditions\": [\"HIV\", \"Hypertension\", \"Diabetes\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/patients/{{patientId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "patients", "{{patientId}}"]
+						},
+						"description": "Partially update a patient record. All fields from `createPatientSchema` are optional.\n\n**Auth:** Bearer token required.\n\n**Body fields (all optional):**\n| Field | Type | Notes |\n|---|---|---|\n| name | string | Min 2 chars |\n| age | integer | 0–150 |\n| gender | enum | `male`, `female`, `other` |\n| location | string | Min 2 chars |\n| phone | string | |\n| conditions | string[] | Array of condition enums |"
+					},
+					"response": [
+						{
+							"name": "Success – Patient Updated",
+							"status": "OK",
+							"code": 200,
+							"body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"patient-uuid...\",\n    \"name\": \"John Kamau\",\n    \"age\": 46,\n    \"location\": \"Mathare, Nairobi\"\n  },\n  \"message\": \"Patient updated successfully\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Delete Patient (Soft Delete)",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/patients/{{patientId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "patients", "{{patientId}}"]
+						},
+						"description": "Soft-delete (deactivate) a patient record.\n\n**Auth:** Bearer token required.\n**Role:** `admin` only."
+					},
+					"response": [
+						{
+							"name": "Success – Patient Deactivated",
+							"status": "OK",
+							"code": 200,
+							"body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"patient-uuid...\",\n    \"deletedAt\": \"2026-04-22T19:30:00.000Z\"\n  },\n  \"message\": \"Patient deactivated successfully\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Set Patient At-Risk Status",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"isAtRisk\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/patients/{{patientId}}/at-risk",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "patients", "{{patientId}}", "at-risk"]
+						},
+						"description": "Update the at-risk flag for a patient.\n\n**Auth:** Bearer token required.\n**Role:** `admin` or `health_worker`.\n\n**Body:**\n| Field | Type | Required |\n|---|---|---|\n| isAtRisk | boolean | ✅ |"
+					},
+					"response": [
+						{
+							"name": "Success – Risk Status Updated",
+							"status": "OK",
+							"code": 200,
+							"body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"patient-uuid...\",\n    \"isAtRisk\": true\n  },\n  \"message\": \"Patient risk status updated\"\n}"
+						}
+					]
+				}
+			],
+			"description": "CRUD operations for patient records. All endpoints require authentication.\n\n- **DELETE** requires `admin` role.\n- **PATCH /:id/at-risk** requires `admin` or `health_worker` role."
+		},
+		{
+			"name": "Visits",
+			"item": [
+				{
+					"name": "Create Visit",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"patientId\": \"{{patientId}}\",\n  \"visitDate\": \"2026-04-22T10:00:00.000Z\",\n  \"notes\": \"Routine follow-up visit. Patient reports feeling well.\",\n  \"medicationAdherence\": true,\n  \"nextVisitDate\": \"2026-05-22T10:00:00.000Z\",\n  \"measurements\": {\n    \"systolic\": 120,\n    \"diastolic\": 80,\n    \"weight\": 72.5,\n    \"height\": 175,\n    \"temperature\": 36.6,\n    \"bloodSugar\": 95,\n    \"oxygenSat\": 98\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/visits",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "visits"]
+						},
+						"description": "Record a new patient visit.\n\n**Auth:** Bearer token required.\n\n**Body fields:**\n| Field | Type | Required | Notes |\n|---|---|---|---|\n| patientId | UUID string | ✅ | |\n| visitDate | ISO datetime | ❌ | Defaults to now |\n| notes | string | ❌ | |\n| medicationAdherence | boolean | ❌ | |\n| nextVisitDate | ISO datetime | ❌ | |\n| measurements | object | ❌ | See sub-fields below |\n\n**measurements sub-fields (all optional):**\n| Field | Type | Constraints |\n|---|---|---|\n| systolic | integer | 0–300 |\n| diastolic | integer | 0–200 |\n| weight | number | ≥ 0 |\n| height | number | ≥ 0 |\n| temperature | number | 30–45 |\n| bloodSugar | number | ≥ 0 |\n| oxygenSat | number | 0–100 |"
+					},
+					"response": [
+						{
+							"name": "Success – Visit Created",
+							"status": "Created",
+							"code": 201,
+							"body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"visit-uuid...\",\n    \"patientId\": \"patient-uuid...\",\n    \"healthWorkerId\": \"worker-uuid...\",\n    \"visitDate\": \"2026-04-22T10:00:00.000Z\",\n    \"notes\": \"Routine follow-up visit.\",\n    \"medicationAdherence\": true,\n    \"nextVisitDate\": \"2026-05-22T10:00:00.000Z\"\n  },\n  \"message\": \"Visit recorded successfully\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Patient Visits",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/visits/patient/{{patientId}}?page=1&limit=20",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "visits", "patient", "{{patientId}}"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Page number (default: 1)"
+								},
+								{
+									"key": "limit",
+									"value": "20",
+									"description": "Results per page (default: 20, max: 100)"
+								}
+							]
+						},
+						"description": "Get all visits for a specific patient with pagination.\n\n**Auth:** Bearer token required."
+					},
+					"response": [
+						{
+							"name": "Success – Patient Visits",
+							"status": "OK",
+							"code": 200,
+							"body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"visit-uuid...\",\n      \"visitDate\": \"2026-04-22T10:00:00.000Z\",\n      \"notes\": \"Routine follow-up visit.\",\n      \"medicationAdherence\": true,\n      \"nextVisitDate\": \"2026-05-22T10:00:00.000Z\"\n    }\n  ],\n  \"pagination\": {\n    \"total\": 1,\n    \"page\": 1,\n    \"limit\": 20,\n    \"totalPages\": 1\n  }\n}"
+						}
+					]
+				},
+				{
+					"name": "Create Medical Record",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"patientId\": \"{{patientId}}\",\n  \"recordType\": \"HIV_test\",\n  \"tbStatus\": \"negative\",\n  \"hivViralLoad\": 200,\n  \"hivTestDate\": \"2026-04-20T08:00:00.000Z\",\n  \"hivTestResult\": \"positive\",\n  \"malariaResult\": \"negative\",\n  \"typhoidResult\": \"negative\",\n  \"arvRegimen\": \"TDF/3TC/DTG\",\n  \"notes\": \"Patient stable on current ARV regimen.\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/visits/medical-records",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "visits", "medical-records"]
+						},
+						"description": "Create a medical record for a patient.\n\n**Auth:** Bearer token required.\n\n**Body fields:**\n| Field | Type | Required | Notes |\n|---|---|---|---|\n| patientId | UUID string | ✅ | |\n| recordType | string | ✅ | Min 1 char, e.g. `HIV_test`, `TB_screening` |\n| tbStatus | string | ❌ | |\n| hivViralLoad | number | ❌ | |\n| hivTestDate | ISO datetime | ❌ | |\n| hivTestResult | string | ❌ | |\n| malariaResult | string | ❌ | |\n| typhoidResult | string | ❌ | |\n| arvRegimen | string | ❌ | |\n| notes | string | ❌ | |"
+					},
+					"response": [
+						{
+							"name": "Success – Medical Record Created",
+							"status": "Created",
+							"code": 201,
+							"body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"record-uuid...\",\n    \"patientId\": \"patient-uuid...\",\n    \"recordType\": \"HIV_test\",\n    \"hivTestResult\": \"positive\",\n    \"arvRegimen\": \"TDF/3TC/DTG\"\n  },\n  \"message\": \"Medical record created\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Patient Medical Records",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/visits/medical-records/{{patientId}}?page=1&limit=20",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "visits", "medical-records", "{{patientId}}"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Page number (default: 1)"
+								},
+								{
+									"key": "limit",
+									"value": "20",
+									"description": "Results per page (default: 20, max: 100)"
+								}
+							]
+						},
+						"description": "Get all medical records for a specific patient with pagination.\n\n**Auth:** Bearer token required."
+					},
+					"response": [
+						{
+							"name": "Success – Medical Records",
+							"status": "OK",
+							"code": 200,
+							"body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"record-uuid...\",\n      \"recordType\": \"HIV_test\",\n      \"hivTestResult\": \"positive\",\n      \"arvRegimen\": \"TDF/3TC/DTG\",\n      \"createdAt\": \"2026-04-22T19:25:00.000Z\"\n    }\n  ],\n  \"pagination\": {\n    \"total\": 1,\n    \"page\": 1,\n    \"limit\": 20,\n    \"totalPages\": 1\n  }\n}"
+						}
+					]
+				},
+				{
+					"name": "Add Note to Patient",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"content\": \"Patient reports improved appetite and energy levels. Continue current treatment plan.\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/visits/notes/{{patientId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "visits", "notes", "{{patientId}}"]
+						},
+						"description": "Add a text note to a patient record.\n\n**Auth:** Bearer token required.\n\n**Body fields:**\n| Field | Type | Required | Notes |\n|---|---|---|---|\n| content | string | ✅ | Min 1 char |"
+					},
+					"response": [
+						{
+							"name": "Success – Note Added",
+							"status": "Created",
+							"code": 201,
+							"body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"note-uuid...\",\n    \"patientId\": \"patient-uuid...\",\n    \"content\": \"Patient reports improved appetite and energy levels.\",\n    \"createdAt\": \"2026-04-22T19:25:00.000Z\"\n  },\n  \"message\": \"Note added\"\n}"
+						}
+					]
+				}
+			],
+			"description": "Visit management, medical records, and patient notes. All endpoints require authentication."
+		},
+		{
+			"name": "Notifications",
+			"item": [
+				{
+					"name": "List Notifications",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/notifications?page=1&limit=20",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "notifications"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Page number (default: 1)"
+								},
+								{
+									"key": "limit",
+									"value": "20",
+									"description": "Results per page (default: 20, max: 100)"
+								},
+								{
+									"key": "unread",
+									"value": "true",
+									"description": "Filter unread only (true/false)",
+									"disabled": true
+								}
+							]
+						},
+						"description": "List notifications for the authenticated user with pagination.\n\n**Auth:** Bearer token required.\n\n**Query parameters:**\n| Param | Type | Description |\n|---|---|---|\n| page | number | Page number |\n| limit | number | Items per page |\n| unread | string | `true` to show only unread |"
+					},
+					"response": [
+						{
+							"name": "Success – Notifications List",
+							"status": "OK",
+							"code": 200,
+							"body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"notif-uuid...\",\n      \"type\": \"missed_medication\",\n      \"message\": \"Patient John Kamau missed medication.\",\n      \"isRead\": false,\n      \"createdAt\": \"2026-04-22T19:25:00.000Z\"\n    }\n  ],\n  \"pagination\": {\n    \"total\": 1,\n    \"page\": 1,\n    \"limit\": 20,\n    \"totalPages\": 1\n  }\n}"
+						}
+					]
+				},
+				{
+					"name": "Mark Notification as Read",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/notifications/{{notificationId}}/read",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "notifications", "{{notificationId}}", "read"]
+						},
+						"description": "Mark a single notification as read.\n\n**Auth:** Bearer token required."
+					},
+					"response": [
+						{
+							"name": "Success – Marked as Read",
+							"status": "OK",
+							"code": 200,
+							"body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"notif-uuid...\",\n    \"isRead\": true\n  },\n  \"message\": \"Notification marked as read\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Mark All Notifications as Read",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/notifications/read-all",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "notifications", "read-all"]
+						},
+						"description": "Mark all notifications for the authenticated user as read.\n\n**Auth:** Bearer token required."
+					},
+					"response": [
+						{
+							"name": "Success – All Marked as Read",
+							"status": "OK",
+							"code": 200,
+							"body": "{\n  \"success\": true,\n  \"data\": {\n    \"count\": 5\n  },\n  \"message\": \"All notifications marked as read\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Trigger Missed Visit Check",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/notifications/check-missed-visits",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "notifications", "check-missed-visits"]
+						},
+						"description": "Manually trigger a check for missed patient visits and generate notifications.\n\n**Auth:** Bearer token required.\n**Role:** `admin` only."
+					},
+					"response": [
+						{
+							"name": "Success – Missed Visit Check",
+							"status": "OK",
+							"code": 200,
+							"body": "{\n  \"success\": true,\n  \"data\": {\n    \"notificationsCreated\": 3\n  },\n  \"message\": \"Missed visit check completed\"\n}"
+						}
+					]
+				}
+			],
+			"description": "Notification management endpoints. All require authentication.\n\n- **Trigger Missed Visit Check** requires `admin` role."
+		},
+		{
+			"name": "Dashboard",
+			"item": [
+				{
+					"name": "Get Dashboard Stats",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/dashboard",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "dashboard"]
+						},
+						"description": "Get aggregated dashboard statistics including patient counts, visit metrics, condition breakdowns, and alerts.\n\n**Auth:** Bearer token required."
+					},
+					"response": [
+						{
+							"name": "Success – Dashboard Stats",
+							"status": "OK",
+							"code": 200,
+							"body": "{\n  \"success\": true,\n  \"data\": {\n    \"summary\": {\n      \"totalPatients\": 150,\n      \"atRiskPatients\": 12,\n      \"patientsNeedingFollowUp\": 8,\n      \"patientsWithMissedMedication\": 5,\n      \"visitsThisWeek\": 42,\n      \"unreadNotifications\": 7\n    },\n    \"conditionBreakdown\": [\n      { \"condition\": \"HIV\", \"count\": 45 },\n      { \"condition\": \"TB\", \"count\": 20 },\n      { \"condition\": \"Hypertension\", \"count\": 35 },\n      { \"condition\": \"Malaria\", \"count\": 15 },\n      { \"condition\": \"Diabetes\", \"count\": 10 }\n    ],\n    \"alerts\": {\n      \"overdueVisitCount\": 8,\n      \"atRiskCount\": 12,\n      \"missedMedicationCount\": 5\n    }\n  }\n}"
+						}
+					]
+				}
+			],
+			"description": "Dashboard statistics and analytics. Requires authentication."
+		}
+	]
+}
